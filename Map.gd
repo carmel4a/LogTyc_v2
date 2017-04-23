@@ -1,75 +1,78 @@
 extends Node2D
-var size = Vector2(10,10)
-onready var v = Vector2(50,0).rotated(-float(float(1)/float(3))*PI)
-onready var Map = AStar.new()
+var map_size = Vector2(10,10)
+
+var nodes = []
+var node_layer = AStar.new()
+
+var _update = []
+var _scale = 500
+onready var _hv = Vector2(1,0).rotated(-float(float(1)/float(3))*PI)
+
 func _ready():
-	var _pre_y = 0
-	var _start = Vector2(0,0)
-	for y in range(size.y):
-		for x in range(size.x):`
-			Map.add_point(Map.get_available_point_id(),Vector3(x+_start.normalized().x/2,y,0))
-		if y%2 == 0:
-			_start += Vector2(v.x,0)
-		else:
-			_start += Vector2(-v.x,0)
-		_pre_y += v.y
-		set_process(true)
+	make_grid()
+	draw_grid()
+	set_process(true)
+
 func _process(delta):
+	draw_connection()
+
+func draw_grid():
+	if !_update.has("Grid"):
+		_update.append("Grid")
 	update()
-#	print(Vector3(floor(get_global_mouse_pos().x/50),floor(get_global_mouse_pos().y/v.y),0))
-#	print(Map.get_closest_point(Vector3(to_fic_pos(Vector2(get_global_mouse_pos().x,get_global_mouse_pos().y)),0)))
-func to_fic_pos(vector2):
-	return(Vector2(floor(vector2.x/50),floor(vector2.y/v.y)))
-func to_true_pos(vector2):
-	var xx
-	if vector2.y%2 == 0:
-		xx = v.x
-	else:
-		xx = 0
-	return(Vector2(vector2.x*50+xx,vector2.y*v.y))
+func draw_connection():
+	if !_update.has("Connection"):
+		_update.append("Connection")
+	update()
+
+func make_grid():
+	nodes.clear()
+	node_layer.clear()
+	for x in range(map_size.x):
+		nodes.append([])
+		for y in range(map_size.y):
+			nodes[x].append([])
+			nodes[x][y] = {}
+			node_layer.add_point(node_layer.get_available_point_id(), _v2_t_AS(Vector2(x,y)))
+	for x in range(map_size.x):
+		for y in range(map_size.y):
+			if x < map_size.x-1:
+				node_layer.get_closest_point(_v2_t_AS(Vector2(x,y)))
+				node_layer.connect_points(node_layer.get_closest_point(_v2_t_AS(Vector2(x,y))),\
+					node_layer.get_closest_point(_v2_t_AS(Vector2(x+1,y))))
+			if y < map_size.y-1:
+				node_layer.get_closest_point(_v2_t_AS(Vector2(x,y)))
+				node_layer.connect_points(node_layer.get_closest_point(_v2_t_AS(Vector2(x,y))),\
+					node_layer.get_closest_point(_v2_t_AS(Vector2(x,y+1))))
+				if x < map_size.x-1:
+					node_layer.get_closest_point(_v2_t_AS(Vector2(x,y)))
+					node_layer.connect_points(node_layer.get_closest_point(_v2_t_AS(Vector2(x,y))),\
+						node_layer.get_closest_point(_v2_t_AS(Vector2(x+1,y+1))))
+			
+			
+#			var _a 
+#			var _copy = AStar.new()
+#			for i in node_layer.get_available_point_id()-1:
+#				_copy.add_point(i,node_layer.get_point_pos(i))
+#			_copy.remove_point(_a)
+#			var _b
+
+
 func _draw():
-	draw_rect(Rect2(Vector2(0,0),Vector2(10*50,10*v.y)),Color(1,1,1))
-	var _pre_y = 0
-	var _start = Vector2(0,0)
-	for y in range(size.y):
-		for x in range(size.x):
-			draw_circle(Vector2(x*50+_start.x,_pre_y),5,Color(0,0,0))
-		if y%2 == 0:
-			_start += Vector2(v.x,0)
-		else:
-			_start += Vector2(-v.x,0)
-		_pre_y += v.y
-	_pre_y = 0
-	var _starta = Vector2(0,0)
-	var _startb = Vector2(0,0)
-	for y in range(size.y):
-		for x in range(size.x):
-			draw_line(Vector2(Vector2(x*50+_start.x,_pre_y)),Vector2((x+1)*50+_start.x,_pre_y),Color(0,0,0),4)
-#			Map.connect_points(Map.get_closest_point(Vector3(x,y,0)),Map.get_closest_point(Vector3(x+1,y,0)))
-			if y%2 == 0:
-				draw_line(Vector2(Vector2((x)*50+_start.x,_pre_y)),Vector2((x)*50-v.x,_pre_y+v.y),Color(0,0,0),4)
-#				Map.connect_points(Map.get_closest_point(Vector3(x,y,0)),Map.get_closest_point(Vector3(x-1,y+1,0)))
-				draw_line(Vector2(Vector2((x)*50+_start.x,_pre_y)),Vector2((x+1)*50-v.x,_pre_y+v.y),Color(0,0,0),4)
-#				Map.connect_points(Map.get_closest_point(Vector3(x,y,0)),Map.get_closest_point(Vector3(x-1,y+1,0)))
-			else:
-				draw_line(Vector2(Vector2((x)*50+_start.x,_pre_y)),Vector2((x)*50,_pre_y+v.y),Color(0,0,0),4)
-#				Map.connect_points(Map.get_closest_point(Vector3(x,y,0)),Map.get_closest_point(Vector3(x,y+1,0)))
-				draw_line(Vector2(Vector2((x)*50+_start.x,_pre_y)),Vector2((x+1)*50,_pre_y+v.y),Color(0,0,0),4)
-#				Map.connect_points(Map.get_closest_point(Vector3(x,y,0)),Map.get_closest_point(Vector3(x+1,y+1,0)))
-		if y%2 == 0:
-			_start += Vector2(v.x,0)
-		else:
-			_start += Vector2(-v.x,0)
-		_pre_y += v.y
+	for x in range(map_size.x):
+		for y in range(map_size.y):
+			if _update.has("Grid")or true:
+				draw_circle(_v2_t_rp(Vector2(x,y),_scale),30,Color(0,0,0))
+#				_update.remove("Grid")
 	
-	var _a = Map.get_closest_point(Vector3(round(get_global_mouse_pos().x/50),round(get_global_mouse_pos().y/v.y),0))
-	var _coppy = AStar.new()
-	for i in range(Map.get_available_point_id()-1):
-		_coppy.add_point(i,Map.get_point_pos(i))
-	_coppy.remove_point(_a)
-	var _b = _coppy.get_closest_point(Vector3(round(get_global_mouse_pos().x/50),round(get_global_mouse_pos().y/v.y),0))
-	print(Map.get_point_pos(_a)," ",Map.get_point_pos(_b))
+func _v2_t_AS(vector):
+	if int(vector.y)%2 == 0:
+		return(Vector3(vector.x,vector.y*_hv.y,0))
+	else:
+		return(Vector3(vector.x+_hv.x,vector.y*_hv.y,0))
 
-	_starta += Vector2(v.x,0)
-
-	draw_line(Vector2(Map.get_point_pos(_a).x*50+_starta.x,Map.get_point_pos(_a).y*v.y),Vector2(Map.get_point_pos(_b).x*50,Map.get_point_pos(_b).y*v.y),Color(1,0,0),4)
+func _v2_t_rp(vector,scale):
+	if int(vector.y)%2 == 0:
+		return(Vector2(vector.x,vector.y*_hv.y)*scale)
+	else:
+		return(Vector2(vector.x+_hv.x,vector.y*_hv.y)*scale)
